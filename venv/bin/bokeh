@@ -1,0 +1,7 @@
+#!/Users/paulsavala/strava_v1/venv/bin/python3.5
+
+import sys
+
+from bokeh.command.bootstrap import main
+
+main(sys.argv)

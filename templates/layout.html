@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Flask Template Example</title>
+    <link href="style.css" rel="stylesheet" type="text/css">
+    <link href="http://cdn.pydata.org/bokeh/release/bokeh-0.11.0.min.css" rel="stylesheet" type="text/css">
+    <script type="text/javascript" src="http://cdn.pydata.org/bokeh/release/bokeh-0.11.0.min.js"></script>
+    {{ script | safe }}
+  </head>
+  <body>
+  	<div id="nav_bar">
+  		<div id="user_pic"><img src="user_pic.jpg" id="user_pic" alt="Pic"></img></div>
+  		<div id="iowava">Iowava</div>
+  		<div id="username">{{ username }}</div>
+  	</div>
+  	<div id="graph">
+  	</div>
+  	<div id="recents">
+  		<div id="recent_rides">
+  			<ul>
+  				<li>Recent ride 1</li>
+  				<li>Recent ride 2</li>
+  				<li>Recent ride 3</li>
+  				<li>Recent ride 4</li>
+  				<li>Recent ride 5</li>
+  			</ul>
+  		</div>
+  		<div id="middle">
+  			{{ div | safe }}
+  		</div>
+  		<div id="recent_segments">
+  			<ul>
+  				<li>Recent segment 1</li>
+  				<li>Recent segment 2</li>
+  				<li>Recent segment 3</li>
+  				<li>Recent segment 4</li>
+  				<li>Recent segment 5</li>
+  			</ul>
+  		</div>
+  	</div>
+  	<div id="footer">
+  		Some footer stuff
+  	</div>
+  </body>
+</html>
