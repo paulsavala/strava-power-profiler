@@ -1,19 +1,20 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Flask Template Example</title>
-    <link href="style.css" rel="stylesheet" type="text/css">
+    <title>Strava Power Profiler</title>
+    <link rel=stylesheet type=text/css href='{{ url_for('static',filename='style.css')}}'>
     <link href="http://cdn.pydata.org/bokeh/release/bokeh-0.11.0.min.css" rel="stylesheet" type="text/css">
     <script type="text/javascript" src="http://cdn.pydata.org/bokeh/release/bokeh-0.11.0.min.js"></script>
     {{ script | safe }}
   </head>
   <body>
   	<div id="nav_bar">
-  		<div id="user_pic"><img src="user_pic.jpg" id="user_pic" alt="Pic"></img></div>
-  		<div id="iowava">Iowava</div>
+  		<div id="user_pic"><img src="{{ url_for('static',filename='user_pic.jpg')}}" id="user_pic" alt="Pic"></img></div>
+  		<div id="iowava">Power Profile</div>
   		<div id="username">{{ username }}</div>
   	</div>
   	<div id="graph">
+  		<div id="bokeh_div">{{ div | safe }}</div>
   	</div>
   	<div id="recents">
   		<div id="recent_rides">
@@ -26,7 +27,7 @@
   			</ul>
   		</div>
   		<div id="middle">
-  			{{ div | safe }}
+  			Not sure what I'll put here
   		</div>
   		<div id="recent_segments">
   			<ul>
