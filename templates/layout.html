@@ -11,20 +11,21 @@
   	<div id="nav_bar">
   		<div id="user_pic"><img src="{{ url_for('static',filename='user_pic.jpg')}}" id="user_pic" alt="Pic"></img></div>
   		<div id="iowava">Power Profile</div>
-  		<div id="username">{{ username }}</div>
+  		<div id="username">{{ athlete.username }}</div>
   	</div>
   	<div id="graph">
   		<div id="bokeh_div">{{ div | safe }}</div>
   	</div>
   	<div id="recents">
   		<div id="recent_rides">
-  			<ul>
-  				<li>Recent ride 1</li>
-  				<li>Recent ride 2</li>
-  				<li>Recent ride 3</li>
-  				<li>Recent ride 4</li>
-  				<li>Recent ride 5</li>
-  			</ul>
+  			<table>
+  				{% for activity in recent_activities %}
+  				<tr>
+  					<td>{{ activity.start_date_local.strftime('%a, %b %d') }}</td>
+  					<td>{{ activity.name }}</td>
+  				</tr>
+  				{% endfor %}
+  			</table>
   		</div>
   		<div id="middle">
   			Not sure what I'll put here
