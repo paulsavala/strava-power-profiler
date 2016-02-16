@@ -1,9 +1,13 @@
-from flask import Flask, request, redirect, render_template
+from flask import Flask, request, redirect, render_template, session, g, url_for, \
+	abort, flash
+import sqlite3
 from stravalib import Client, unithelper
 import pandas as pd
+import pandas as np
 from bokeh.plotting import figure, output_file, show
 from bokeh.embed import components
-import datetime
+import math
+import helpers as my # My own collection of helper functions
 
 app_lulu = Flask(__name__)
 
@@ -13,72 +17,6 @@ client = Client()
 url = client.authorization_url(client_id = 10117, \
 	redirect_uri = 'http://127.0.0.1:5000/authorization')
 
-# ==================- Helper functions -====================
-
-# Convert a stream to a proper pandas df
-def stream_to_df(stream):
-	stream_dict = {}
-	for type in stream.keys():
-		stream_dict[type] = list(stream[type].data)
-		
-	stream_df = pd.DataFrame(stream_dict)
-	
-	return stream_df
-
-# Compute the variability scores
-def variability_scores(grad_series):
-	# Separate into positive and negative gradients
-	grad_pos = grad_series[grad_series >= 0]
-	grad_neg = grad_series[grad_series < 0]
-
-	# Compute the means
-	grad_mean = grad_series.mean()
-	grad_pos_mean = grad_pos.mean()
-	grad_neg_mean = grad_neg.mean()
-
-	# Get the lengths
-	n = grad_series.shape[0]
-	n_pos = grad_pos.shape[0]
-	n_neg = grad_neg.shape[0]
-
-	# Compute the positive and negative variability scores
-	try:
-		var_pos = math.sqrt(sum((grad_pos - grad_pos_mean) ** 2)) / n_pos
-	except ZeroDivisionError:
-		var_pos = 0
-
-	try:
-		var_neg = math.sqrt(sum((grad_neg - grad_neg_mean) ** 2)) / n_neg
-	except ZeroDivisionError:
-		var_neg = 0
-
-	# Compute total variability
-	var = var_pos + var_neg
-	
-	return var, var_pos, var_neg
-	
-# Grades a hill according to how uphill / downhill it is
-# "Large" positive values been long, steep climbs
-# "Large" negative values mean long, steep descents
-def hill_score(grad_series, dist_series):
-	# We assume that grad_series is a pandas series holding the gradients
-	# at each measurement, and that dist_series is the same for distances 
-	# (measured at the same time)
-	dist_diff = dist_series.diff().drop(0)
-	grad_series = grad_series.drop(0)
-	
-	hill_score = sum(dist_diff * grad_series)
-	
-	return hill_score
-
-# Grab the most recent activities
-def recent_activities(num_activities = 5):
-	client = Client(access_token = app_lulu.vars['access_token'])
-	athlete = client.get_athlete()
-	
-	activities = client.get_activities(limit = num_activities)
-	
-	return activities
 # ==================- Flask functions -=====================
 
 # Have user connect with Strava
@@ -97,50 +35,45 @@ def authorization():
 	access_token = client.exchange_code_for_token(client_id = my_client_id, \
 		client_secret = my_client_secret, code = code)
 	app_lulu.vars['access_token'] = access_token
+	app_lulu.curr_athlete = client.get_athlete()
 	
-	return redirect('/graph_profile')
+	return render_template('menu.html', athlete = app_lulu.curr_athlete)
 
-# Get the stream for a SEGMENT
-@app_lulu.route('/segment_stream')
-def segment_stream(segment_id = 3944715):
-	types = ['distance', 'altitude']
-	stream = client.get_segment_streams(segment_id, types = types, resolution = 'high')
+# Build the power profile page by grabbing recent activities and segments and populating the graph
+@app_lulu.route('/power_profile')
+def grade_segments():
+	recent_activities = client.get_activities(limit=3)
+	segments = get_segments_from_activities(recent_activities)
+	script, div = placeholder_graph()
+	return render_template('layout.html', \
+		recent_segments = segments, athlete = app_lulu.curr_athlete, \
+		recent_activities = recent_activities, script = script, div = div)
 
-	stream_df = stream_to_df(stream)
 
-	return ('Got the stream for segment with id %d' % segment_id)
-	
-# Render the power profile chart page. Right now the chart is static.
-@app_lulu.route('/graph_profile')
-def graph_profile():
-	curr_athlete = client.get_athlete()
-	
-	# This is a temporary, static graph acting as a placeholder
-	p = figure(plot_width = 450, plot_height = 450)
-	p.logo = None
-	p.toolbar_location = None
-	p.patch([-3,0,2,0], [0,2,0,-1], line_width = 2, alpha = 0.5)
- 	#p.axis.minor_tick_line_color = None
-  	#p.xaxis.axis_label = ''
- 	#p.yaxis.axis_label = ''
-	
-	script, div = components(p)
-	
-	# Next we grab the most recent rides
-	recent_rides = recent_activities()
-	
-	return render_template('layout.html', script = script, div = div, recent_activities = recent_rides, athlete = curr_athlete)
-	
 # ======================- Jinja filters -========================= 
-# @app_lulu.template_filter('strftime')
-# def _jinja2_filter_date(d, fmt = None):
-#     date = datetime.datetime.strptime(d, fmt)
-#     native = date.replace(tzinfo = None)
-#     format='%Y'
-#     return native.strftime(format) 
+
 
 # ======================- Housekeeping functions -================
 
 # Settings for local Flask deployment (for testing)
 if __name__ == "__main__":
 	app_lulu.run(debug=True)
+	
+# =======================- Old work -==============================
+
+## I don't think I need this, but I'm keeping it in case something breaks!		
+# Get the stream for a SEGMENT
+# @app_lulu.route('/grade_segments')
+# def grade_segments():
+# 	segments = []
+# 	recent_activities = client.get_activities(limit=3)
+# 	for activity in recent_activities:
+# 		activity = client.get_activity(activity.id) # For some reason you _have_ to get the activity again, otherwise the efforts are NoneType
+# 		activity_efforts = activity.segment_efforts
+# 		for effort in activity_efforts:
+# 			hill_score, var_score = grade_segment(effort.segment.id)
+# 			effort.hill_score = round(hill_score, 2)
+# 			effort.var_score = round(100*var_score, 2)
+# 			segments.append(effort)
+# 	return render_template('layout.html', \
+# 		recent_segments = segments, athlete = app_lulu.curr_athlete)

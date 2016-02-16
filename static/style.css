@@ -195,7 +195,7 @@ img#user_pic {
 }
 
 #recents div {
-	width: 33%;
+	width: 50%;
 	float: left;
 }
 
@@ -203,12 +203,8 @@ img#user_pic {
 	border: solid 1px red;
 }
 
-#middle {
-	border: solid 1px red;
-}
-
 #recent_segments {
-	border: solid 1px red;
+	border: solid 1px green;
 }
 
 #footer {
