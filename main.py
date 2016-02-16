@@ -28,7 +28,7 @@ def connect():
 @app_lulu.route('/authorization')
 def authorization():
 	my_client_id = 10117
-	my_client_secret = 'dceb245a0fe67bcebb54a7c1af1d8a1a58025157'
+	my_client_secret = 'include my secret key'
 	
 	code = request.args.get('code')
 	
