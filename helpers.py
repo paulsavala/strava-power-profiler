@@ -1,3 +1,11 @@
+from flask import Flask, request, redirect, render_template, url_for
+import sqlite3 as sql
+from stravalib import Client, unithelper
+import pandas as pd
+from bokeh.plotting import figure, output_file, show
+from bokeh.embed import components
+import math
+
 # ==================- Helper functions -====================
 # Convert a stream to a proper pandas df
 def stream_to_df(stream):
@@ -29,7 +37,7 @@ def get_hill_score(grad_series, dist_series):
 	return hill_score
 
 # Fetch a segment by id and convert to a df	
-def get_segment_df(id):
+def get_segment_df(client, id):
 	stream = client.get_segment_streams(id, types=['distance', 'altitude'], resolution='high')
 	segment_stream_df = stream_to_df(stream)
 	segment_grad_df = segment_stream_df.diff()['altitude'] / segment_stream_df.diff()['distance']
@@ -37,19 +45,19 @@ def get_segment_df(id):
 	return segment_stream_df
 
 # Returns all segment grades given an id
-def grade_segment(id):
-	segment_df = get_segment_df(id)
+def grade_segment(client, id):
+	segment_df = get_segment_df(client, id)
 	hill_score = get_hill_score(segment_df['gradient'], segment_df['distance'])
 	var_score = get_var_score(segment_df['gradient'])
 	return hill_score, var_score
 	
-def get_segments_from_activities(activities):
+def get_segments_from_activities(client, activities):
 	segments = []
 	for activity in activities:
 		activity = client.get_activity(activity.id) # For some reason you _have_ to get the activity again, otherwise the efforts are NoneType
 		activity_efforts = activity.segment_efforts
 		for effort in activity_efforts:
-			hill_score, var_score = grade_segment(effort.segment.id)
+			hill_score, var_score = grade_segment(client, effort.segment.id)
 			effort.hill_score = round(hill_score, 2)
 			effort.var_score = round(100*var_score, 2)
 			segments.append(effort)

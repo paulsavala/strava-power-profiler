@@ -1,49 +1,28 @@
-import pandas as pd
-import numpy as np
-from bokeh.plotting import figure, output_file, show
-from bokeh.embed import components
-import math
-import sqlite3
+#import pandas as pd
+import sqlite3 as sql
 
-# ===============- Variability score -=======================
-def variability_scores(grad_series):
-	var = sum(grad_series.diff().fillna(0))
-	return var
 
-# ====================- Hill score -===========================
-# Grades a hill according to how uphill / downhill it is
-# "Large" positive values been long, steep climbs
-# "Large" negative values mean long, steep descents
-def hill_score(grad_series, dist_series):
-	# We assume that grad_series is a pandas series holding the gradients
-	# at each measurement, and that dist_series is the same for distances 
-	# (measured at the same time)
-	dist_diff = dist_series.diff().drop(0)
-	grad_series = grad_series.drop(0)
+DATABASE = '/Users/paulsavala/strava_v1/database.db'
+
+def dict_factory(cursor, row):
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d
+
+# Gets segment from db by segment id (_not_ the db id)
+def retrieve_segment(segment_id):
+	with sql.connect(DATABASE) as con:
+		con.row_factory = dict_factory
+		cur = con.cursor()
+		if cur.execute('SELECT * FROM %s WHERE %s = %d' % ('segments', 'segment_id', segment_id)):
+			segment = cur.fetchone()
+		else:
+			segment = {}
+	return segment
 	
-	hill_score = sum(dist_diff * grad_series)
-	
-	return hill_score
-	
-
-# ===================- Data -==================================
-short_df = pd.DataFrame.from_csv('stream.csv')
-short_grad_df = short_df.diff().altitude / short_df.diff().distance
-short_df['gradient'] = short_grad_df.replace(np.nan, 0)
-
-long_df = pd.DataFrame.from_csv('stream2.csv')
-long_grad_df = long_df.diff().altitude / long_df.diff().distance
-long_df['gradient'] = long_grad_df.replace(np.nan, 0)
-
-var = variability_scores(short_df['gradient'])
-print('Var = %f' % var)
-print('Hill score = %f' % hill_score(short_df['gradient'], short_df['distance']))
-print('=' * 20)
-
-var = variability_scores(long_df['gradient'])
-print('Var = %f' % var)
-print('Hill score = %f' % hill_score(long_df['gradient'], long_df['distance']))
-
+segment = retrieve_segment(5147121)
+print(segment)
 
 # ====================- Formatting datetimes -====================
 # import datetime
