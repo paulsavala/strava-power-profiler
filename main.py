@@ -134,7 +134,7 @@ def connect():
 @app_lulu.route('/authorization')
 def authorization():
 	my_client_id = 10117
-	my_client_secret = 'secret_key'
+	my_client_secret = ''
 	
 	code = request.args.get('code')
 	
@@ -146,9 +146,10 @@ def authorization():
 	return render_template('menu.html', athlete = app_lulu.curr_athlete)
 
 # Build the power profile page by grabbing recent activities and segments and populating the graph
-@app_lulu.route('/power_profile')
-def power_profile():
-	recent_activities = client.get_activities(limit=3)
+@app_lulu.route('/power_profile', defaults = {'num_rides': 3})
+@app_lulu.route('/power_profile/<int:num_rides>')
+def power_profile(num_rides):
+	recent_activities = client.get_activities(limit = num_rides)
 	segments = get_segments_from_activities(recent_activities)
 	for segment in segments:
 		db_segment = retrieve_segment(segment.id)
@@ -169,6 +170,14 @@ def insert_segment_to_db():
 	result = insert_segment(segment)
 	return 'Done'
 	
+@app_lulu.route('/update_recent_rides', methods = ['POST'])
+def update_rides():
+	num_rides = int(request.form['num_recent_rides'])
+	if num_rides <= 0:
+		return redirect(url_for('power_profile'))
+	else:
+		return redirect(url_for('power_profile', num_rides = num_rides))
+		
 
 # ======================- Jinja filters -========================= 
 

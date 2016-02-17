@@ -16,6 +16,14 @@
   	<div id="graph">
   		<div id="bokeh_div">{{ div | safe }}</div>
   	</div>
+  	<div id="options">
+  		<div id="recent_rides">
+			<form id='recent_rides_options' method='POST' action={{ url_for('update_rides') }} >
+				# of recent rides: <input type="text" name="num_recent_rides">
+				<input type="submit" value="Update">
+			</form>
+  		</div>
+  	</div>
   	<div id="recents">
   		<div id="recent_rides">
   			<table>
