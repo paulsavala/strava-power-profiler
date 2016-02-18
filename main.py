@@ -21,8 +21,8 @@ url = client.authorization_url(client_id = 10117, \
 app_lulu.client_secret = strava_secret_key
 app_lulu.client_id = strava_client_id
 
-DATABASE = '/Users/paulsavala/strava_v1/database.db'
-#DATABASE = '/database.db'
+#DATABASE = '/Users/paulsavala/strava_v1/database.db'
+DATABASE = 'database.db'
 
 # ==================- Database functions -==================
 
@@ -113,20 +113,6 @@ def get_segments_from_activities(activities):
 			segments.append(effort.segment)
 	return segments
 	
-## This version also grades the segments after it grabs them, without first checking
-## if they're already in the db. The new version fixes this.
-# def get_segments_from_activities(activities):
-# 	segments = []
-# 	for activity in activities:
-# 		activity = client.get_activity(activity.id) # For some reason you _have_ to get the activity again, otherwise the efforts are NoneType
-# 		activity_efforts = activity.segment_efforts
-# 		for effort in activity_efforts:
-# 			hill_score, var_score = grade_segment(effort.segment.id)
-# 			effort.hill_score = round(hill_score, 2)
-# 			effort.var_score = round(100*var_score, 2)
-# 			segments.append(effort)
-# 	return segments
-	
 # This is a temporary, static graph acting as a placeholder
 def placeholder_graph():
 	p = figure(plot_width = 450, plot_height = 450)
@@ -179,25 +165,20 @@ def authorization():
 	return render_template('menu.html', athlete = app_lulu.curr_athlete)
 
 # Build the power profile page by grabbing recent activities and segments and populating the graph
-@app_lulu.route('/power_profile', defaults = {'num_rides': 3})
-@app_lulu.route('/power_profile/<int:num_rides>')
-def power_profile(num_rides):
-	# Testing
-	after = datetime(2015, 12, 1)
-	before = datetime(2015, 12, 30)
-	limit = 50
-	recent_activities = client.get_activities(before = before, after = after, limit = limit)
-	# End testing
+@app_lulu.route('/power_profile', defaults = {'after_date': '', 'before_date': ''})
+@app_lulu.route('/power_profile/<after_date>/<before_date>')
+def power_profile(after_date, before_date):
+	if after_date == '' or before_date == '':
+		recent_activities = client.get_activities(limit = 3)
+	else:
+		after = datetime.strptime(after_date, '%m-%d-%Y')
+		before = datetime.strptime(before_date, '%m-%d-%Y')
+		limit = 50
+		recent_activities = client.get_activities(before = before, after = after, limit = limit)
 	
-	#recent_activities = client.get_activities(limit = num_rides)
 	segments = get_segments_from_activities(recent_activities)
 	segments = check_db_for_segments(segments)
-	## Commented this part out because it's now implemented in functions above
-	# for segment in segments:
-# 		db_segment = retrieve_segment(segment.id)
-# 		if db_segment is None:
-# 			segment.hill_score, segment.var_score = grade_segment(segment.id)
-# 			insert_segment(segment)
+
 	script, div = placeholder_graph()
 	return render_template('layout.html', \
 		recent_segments = segments, athlete = app_lulu.curr_athlete, \
@@ -215,11 +196,9 @@ def insert_segment_to_db():
 	
 @app_lulu.route('/update_recent_rides', methods = ['POST'])
 def update_rides():
-	num_rides = int(request.form['num_recent_rides'])
-	if num_rides <= 0:
-		return redirect(url_for('power_profile'))
-	else:
-		return redirect(url_for('power_profile', num_rides = num_rides))
+	before_date = str(request.form['datepicker_before']).replace('/','-')
+	after_date = str(request.form['datepicker_after']).replace('/','-')
+	return redirect(url_for('power_profile', after_date = after_date, before_date = before_date))
 		
 
 # ======================- Jinja filters -========================= 
@@ -249,3 +228,17 @@ if __name__ == "__main__":
 # 			segments.append(effort)
 # 	return render_template('layout.html', \
 # 		recent_segments = segments, athlete = app_lulu.curr_athlete)
+
+## This version also grades the segments after it grabs them, without first checking
+## if they're already in the db. The new version fixes this.
+# def get_segments_from_activities(activities):
+# 	segments = []
+# 	for activity in activities:
+# 		activity = client.get_activity(activity.id) # For some reason you _have_ to get the activity again, otherwise the efforts are NoneType
+# 		activity_efforts = activity.segment_efforts
+# 		for effort in activity_efforts:
+# 			hill_score, var_score = grade_segment(effort.segment.id)
+# 			effort.hill_score = round(hill_score, 2)
+# 			effort.var_score = round(100*var_score, 2)
+# 			segments.append(effort)
+# 	return segments

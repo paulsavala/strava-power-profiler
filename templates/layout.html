@@ -5,6 +5,18 @@
     <link rel=stylesheet type=text/css href='{{ url_for('static',filename='style.css')}}'>
     <link href="http://cdn.pydata.org/bokeh/release/bokeh-0.11.0.min.css" rel="stylesheet" type="text/css">
     <script type="text/javascript" src="http://cdn.pydata.org/bokeh/release/bokeh-0.11.0.min.js"></script>
+    <!-- Datepicker_after -->
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+    <script src="//code.jquery.com/jquery-1.10.2.js"></script>
+  	<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <script>
+  		$(function() {
+    	$( "#datepicker1" ).datepicker();
+  		});
+  		$(function() {
+    	$( "#datepicker2" ).datepicker();
+  		});
+  	</script>
     {{ script | safe }}
   </head>
   <body>
@@ -18,8 +30,8 @@
   	</div>
   	<div id="options">
   		<div id="recent_rides">
-			<form id='recent_rides_options' method='POST' action={{ url_for('update_rides') }} >
-				# of recent rides: <input type="text" name="num_recent_rides">
+			<form id='recent_rides_options' method='POST' action={{ url_for('update_rides') }}>
+				<p>From: <input type="text" id="datepicker1" name="datepicker_after"> Until: <input type="text" id="datepicker2" name="datepicker_before"></p>
 				<input type="submit" value="Update">
 			</form>
   		</div>

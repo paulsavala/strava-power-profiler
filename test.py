@@ -1,10 +1,10 @@
 import pandas as pd
 import sqlite3 as sql
-import datetime
+from datetime import date, datetime
 
-
-test_dict = {'key1' : 1, 'key2' : 2}
-print(test_dict.key1)
+date = '02/19/2016'
+stripped_date = datetime.strptime(date, '%m/%d/%Y')
+print(stripped_date)
 
 # DATABASE = '/Users/paulsavala/strava_v1/database.db'
 # 
