@@ -37,11 +37,11 @@
   		</div>
   		<div id="recent_segments">
   			<table>
-  				{% for effort in recent_segments %}
+  				{% for segment in recent_segments %}
   				<tr>
-  					<td>{{ effort.segment.name }}</td>
-  					<td>Hill score = {{ effort.hill_score }}</td>
-  					<td>Var score = {{ effort.var_score }}</td>
+  					<td>{{ segment.name }}</td>
+  					<td>Hill score = {{ segment.hill_score }}</td>
+  					<td>Var score = {{ segment.var_score }}</td>
   				</tr>
   				{% endfor %}
   			</table>

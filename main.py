@@ -5,7 +5,7 @@ import pandas as pd
 from bokeh.plotting import figure, output_file, show
 from bokeh.embed import components
 import math
-import helpers as my # My own collection of helper functions
+from datetime import date, datetime
 
 app_lulu = Flask(__name__)
 
@@ -14,6 +14,11 @@ app_lulu.vars = {}
 client = Client()
 url = client.authorization_url(client_id = 10117, \
 	redirect_uri = 'http://127.0.0.1:5000/authorization')
+
+
+
+app_lulu.client_secret = strava_secret_key
+app_lulu.client_id = strava_client_id
 
 DATABASE = '/Users/paulsavala/strava_v1/database.db'
 #DATABASE = '/database.db'
@@ -104,11 +109,22 @@ def get_segments_from_activities(activities):
 		activity = client.get_activity(activity.id) # For some reason you _have_ to get the activity again, otherwise the efforts are NoneType
 		activity_efforts = activity.segment_efforts
 		for effort in activity_efforts:
-			hill_score, var_score = grade_segment(effort.segment.id)
-			effort.hill_score = round(hill_score, 2)
-			effort.var_score = round(100*var_score, 2)
-			segments.append(effort)
+			segments.append(effort.segment)
 	return segments
+	
+## This version also grades the segments after it grabs them, without first checking
+## if they're already in the db. The new version fixes this.
+# def get_segments_from_activities(activities):
+# 	segments = []
+# 	for activity in activities:
+# 		activity = client.get_activity(activity.id) # For some reason you _have_ to get the activity again, otherwise the efforts are NoneType
+# 		activity_efforts = activity.segment_efforts
+# 		for effort in activity_efforts:
+# 			hill_score, var_score = grade_segment(effort.segment.id)
+# 			effort.hill_score = round(hill_score, 2)
+# 			effort.var_score = round(100*var_score, 2)
+# 			segments.append(effort)
+# 	return segments
 	
 # This is a temporary, static graph acting as a placeholder
 def placeholder_graph():
@@ -123,6 +139,20 @@ def placeholder_graph():
 	script, div = components(p)
 	return script, div
 
+# Takes in a collection (list, or BatchedResultsIterator) of segments and checks to
+# see if they're already in the db. If so it fetches them, if not it calculates the
+# score and writes them into the db.
+def check_db_for_segments(segments):
+	for segment in segments:
+		db_segment = retrieve_segment(segment.id)
+		if db_segment is None: # if the segment is not yet in the db...
+			segment.hill_score, segment.var_score = grade_segment(segment.id)
+			insert_segment(segment)
+		else: # ...else the segment is already in the db, so grab it
+			segment = retrieve_segment(segment.id)
+	return segments # This returned collection now has hill and var scores attached to each segment
+			
+
 # ==================- Flask functions -=====================
 
 # Have user connect with Strava
@@ -133,8 +163,8 @@ def connect():
 # Authentication and token exchange
 @app_lulu.route('/authorization')
 def authorization():
-	my_client_id = 10117
-	my_client_secret = ''
+	my_client_id = app_lulu.client_id
+	my_client_secret = app_lulu.client_secret
 	
 	code = request.args.get('code')
 	
@@ -149,12 +179,22 @@ def authorization():
 @app_lulu.route('/power_profile', defaults = {'num_rides': 3})
 @app_lulu.route('/power_profile/<int:num_rides>')
 def power_profile(num_rides):
-	recent_activities = client.get_activities(limit = num_rides)
+	# Testing
+	after = datetime(2015, 12, 1)
+	before = datetime(2015, 12, 10)
+	limit = 50
+	recent_activities = client.get_activities(before = before, after = after, limit = limit)
+	# End testing
+	
+	#recent_activities = client.get_activities(limit = num_rides)
 	segments = get_segments_from_activities(recent_activities)
-	for segment in segments:
-		db_segment = retrieve_segment(segment.id)
-		if db_segment is None:
-			insert_segment(segment)
+	segments = check_db_for_segments(segments)
+	## Commented this part out because it's now implemented in functions above
+	# for segment in segments:
+# 		db_segment = retrieve_segment(segment.id)
+# 		if db_segment is None:
+# 			segment.hill_score, segment.var_score = grade_segment(segment.id)
+# 			insert_segment(segment)
 	script, div = placeholder_graph()
 	return render_template('layout.html', \
 		recent_segments = segments, athlete = app_lulu.curr_athlete, \
