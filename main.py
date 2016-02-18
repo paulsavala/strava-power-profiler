@@ -73,7 +73,8 @@ def stream_to_df(stream):
 # Compute the variability score
 def get_var_score(grad_series):
 	var_score = sum(grad_series.diff().fillna(0))
-	return var_score
+	return 1000*var_score # multiplying by 1000 is scaling
+# GETTING NEGATIVE VARIABILITY SCORES. SHOULD THERE BE AN ABSOLUTE VALUE HERE?
 	
 # Grades a hill according to how uphill / downhill it is
 # "Large" positive values been long, steep climbs
@@ -85,7 +86,7 @@ def get_hill_score(grad_series, dist_series):
 	dist_diff = dist_series.diff().drop(0)
 	grad_series = grad_series.drop(0)
 	
-	hill_score = sum(dist_diff * grad_series)
+	hill_score = sum(dist_diff * grad_series) 
 	
 	return hill_score
 
@@ -190,7 +191,7 @@ def insert_segment_to_db():
 	segment = client.get_segment(5147121)
 	segment.hill_score, segment.var_score = grade_segment(5147121)
 	segment.hill_score = round(segment.hill_score, 0)
-	segment.var_score = round(100*segment.var_score, 2)
+	segment.var_score = round(segment.var_score, 2)
 	result = insert_segment(segment)
 	return 'Done'
 	
