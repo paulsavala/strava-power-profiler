@@ -72,7 +72,7 @@ def stream_to_df(stream):
 
 # Compute the variability score
 def get_var_score(grad_series):
-	var_score = sum(grad_series.diff().fillna(0))
+	var_score = sum(abs(grad_series.diff().fillna(0)))
 	return 1000*var_score # multiplying by 1000 is scaling
 # GETTING NEGATIVE VARIABILITY SCORES. SHOULD THERE BE AN ABSOLUTE VALUE HERE?
 	
@@ -87,7 +87,6 @@ def get_hill_score(grad_series, dist_series):
 	grad_series = grad_series.drop(0)
 	
 	hill_score = sum(dist_diff * grad_series) 
-	
 	return hill_score
 
 # Fetch a segment by id and convert to a df	

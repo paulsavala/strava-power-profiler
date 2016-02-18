@@ -142,7 +142,7 @@ input[type=button] {width: auto; overflow: visible;}
     overflow: hidden;
     background-color: #f2f2f2;
     font-family: Helvetica;
-    border: solid 1px red;
+    /*border: solid 1px red;*/
     padding: 5px;
 }
 
@@ -172,7 +172,7 @@ img#user_pic {
 #graph {
 	overflow: hidden;
 	position: relative;
-	border: solid 1px blue;
+	/*border: solid 1px blue;*/
 	width: 100%;
 	height: 500px;
 }
@@ -185,7 +185,12 @@ img#user_pic {
 	left: 50%;
 	transform: translate(-50%, -50%);
 	
-	border: solid 1px green;
+	/*border: solid 1px green;*/
+}
+
+#options {
+	border-top: solid 1px gray;
+	border-bottom: solid 1px gray;
 }
 
 #recents {
@@ -200,11 +205,39 @@ img#user_pic {
 }
 
 #recent_rides {
-	border: solid 1px red;
+	/*border: solid 1px red;*/
+}
+
+#recent_rides td {
+	padding: 2px;
+	border: solid 1px white;
+}
+
+#recent_rides td.table_label {
+	padding-right: 20px;
+}
+
+#recent_rides td.data_label {
+	padding-left: 20px;
+	padding-right: 20px;
 }
 
 #recent_segments {
-	border: solid 1px green;
+	/*border: solid 1px green;*/
+}
+
+#recent_segments td {
+	padding: 2px;
+	border: solid 1px white;
+}
+
+#recent_segments td.table_label {
+	padding-right: 20px;
+}
+
+#recent_segments td.data_label {
+	padding-left: 20px;
+	padding-right: 20px;
 }
 
 #footer {
@@ -213,5 +246,5 @@ img#user_pic {
 	font-size: 12px;
 	padding: 5px;
 	background-color: #9e9e9e;
-	border: solid 1px blue;
+	/*border: solid 1px blue;*/
 }

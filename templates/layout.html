@@ -42,8 +42,8 @@
   			<table>
   				{% for activity in recent_activities %}
   				<tr>
-  					<td>{{ activity.start_date_local.strftime('%a, %b %d') }}</td>
-  					<td>{{ activity.name }}</td>
+  					<td class="table_label">{{ activity.start_date_local.strftime('%a, %b %d') }}</td>
+  					<td class="table_data">{{ activity.name }}</td>
   				</tr>
   				{% endfor %}
   			</table>
@@ -52,9 +52,9 @@
   			<table>
   				{% for segment in recent_segments %}
   				<tr>
-  					<td>{{ segment.name }}</td>
-  					<td>Hill score = {{ segment.hill_score }}</td>
-  					<td>Var score = {{ segment.var_score }}</td>
+  					<td class="table_label">{{ segment.name }}</td>
+  					<td class="table_data">Hill score = {{ segment.hill_score }}</td>
+  					<td class="table_data">Var score = {{ segment.var_score }}</td>
   				</tr>
   				{% endfor %}
   			</table>
