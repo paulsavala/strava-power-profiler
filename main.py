@@ -15,6 +15,7 @@ client = Client()
 url = client.authorization_url(client_id = 10117, \
 	redirect_uri = 'http://127.0.0.1:5000/authorization')
 
+# Strava API values
 
 
 app_lulu.client_secret = strava_secret_key
@@ -149,7 +150,9 @@ def check_db_for_segments(segments):
 			segment.hill_score, segment.var_score = grade_segment(segment.id)
 			insert_segment(segment)
 		else: # ...else the segment is already in the db, so grab it
-			segment = retrieve_segment(segment.id)
+			segment_dict = retrieve_segment(segment.id)
+			segment.hill_score = round(segment_dict['hill_score'], 2)
+			segment.var_score = round(segment_dict['var_score'], 2)
 	return segments # This returned collection now has hill and var scores attached to each segment
 			
 
@@ -181,7 +184,7 @@ def authorization():
 def power_profile(num_rides):
 	# Testing
 	after = datetime(2015, 12, 1)
-	before = datetime(2015, 12, 10)
+	before = datetime(2015, 12, 30)
 	limit = 50
 	recent_activities = client.get_activities(before = before, after = after, limit = limit)
 	# End testing
