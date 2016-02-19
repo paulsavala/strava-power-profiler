@@ -222,9 +222,8 @@ img#user_pic {
 	padding-right: 20px;
 }
 
-#recent_segments {
-	/*border: solid 1px green;*/
-	display: hidden;
+#recent_segments table {
+	display: none;
 }
 
 #recent_segments td {

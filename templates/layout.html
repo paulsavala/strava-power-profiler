@@ -5,10 +5,10 @@
     <link rel=stylesheet type=text/css href='{{ url_for('static',filename='style.css')}}'>
     <link href="http://cdn.pydata.org/bokeh/release/bokeh-0.11.0.min.css" rel="stylesheet" type="text/css">
     <script type="text/javascript" src="http://cdn.pydata.org/bokeh/release/bokeh-0.11.0.min.js"></script>
-    <!-- Datepicker -->
-    <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
-    <script src="//code.jquery.com/jquery-1.10.2.js"></script>
-  	<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <!-- jQuery stuff -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js">></script>
+  	<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
     <script>
   		$(function() {
     	$( "#datepicker1" ).datepicker();
@@ -19,7 +19,17 @@
   	</script>
   	<!-- End Datepicker -->
     {{ script | safe }}
-    <!-- jQuery testing -->
+    <script>
+    $(function() { 
+    	{% for activity in recent_activities %}
+			$('#activity_{{ activity.id }}')
+			.mouseover(function() {
+				$('#recent_segments').children().css('display', 'none');
+				$('#segments_{{ activity.id }}').css('display', 'block'); 
+			});
+    	{% endfor %}
+    });
+    </script>
   </head>
   <body>
   	<div id="nav_bar">
@@ -43,16 +53,18 @@
   		<div id="recent_rides">
   			<table>
   				{% for activity in recent_activities %}
-  				<tr>
+  				<tr id="activity_{{ activity.id }}">
   					<td class="table_label">{{ activity.start_date_local.strftime('%a, %b %d') }}</td>
   					<td class="table_data">{{ activity.name }}</td>
+  					<td class="table_data">{{ activity.distance }} </td>
   				</tr>
   				{% endfor %}
   			</table>
   		</div>
   		<div id="recent_segments">
-  			<table>
-  				{% for segment in recent_segments %}
+  			{% for activity in recent_activities %}
+  			<table id="segments_{{ activity.id }}">
+  				{% for segment in activity_segments[activity.id] %}
   				<tr>
   					<td class="table_label">{{ segment.name }}</td>
   					<td class="table_data">Hill score = {{ segment.hill_score }}</td>
@@ -61,6 +73,7 @@
   				</tr>
   				{% endfor %}
   			</table>
+			{% endfor %}
   		</div>
   	</div>
   	<div id="footer">

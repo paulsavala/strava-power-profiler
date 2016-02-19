@@ -16,6 +16,7 @@ client = Client()
 url = client.authorization_url(client_id = 10117, \
 	redirect_uri = 'http://127.0.0.1:5000/authorization')
 
+# Strava API values
 
 
 app_lulu.client_secret = strava_secret_key
@@ -103,14 +104,17 @@ def grade_segment(id):
 	hill_score = get_hill_score(segment_df['gradient'], segment_df['distance'])
 	var_score = get_var_score(segment_df['gradient'])
 	return hill_score, var_score
-	
+
+# Returns a dict, where each key is the activity id, and the value is a list of segments
 def get_segments_from_activities(activities):
-	segments = []
+	segments = {}
 	for activity in activities:
+		activity_segments = []
 		activity = client.get_activity(activity.id) # For some reason you _have_ to get the activity again, otherwise the efforts are NoneType
 		activity_efforts = activity.segment_efforts
 		for effort in activity_efforts:
-			segments.append(effort.segment)
+			activity_segments.append(effort.segment)
+		segments[activity.id] = activity_segments
 	return segments
 	
 # This is a temporary, static graph acting as a placeholder
@@ -192,12 +196,13 @@ def power_profile(after_date, before_date):
 		recent_activities = client.get_activities(before = before, after = after, limit = limit)
 	
 	segments = get_segments_from_activities(recent_activities)
-	segments = check_db_for_segments(segments)
+	for activity in recent_activities:
+		segments[activity.id] = check_db_for_segments(segments[activity.id])
 
 	script, div = placeholder_graph()
-	return render_template('layout.html', \
-		recent_segments = segments, athlete = app_lulu.curr_athlete, \
-		recent_activities = recent_activities, script = script, div = div)
+	return render_template('layout.html', athlete = app_lulu.curr_athlete, \
+		recent_activities = recent_activities, activity_segments = segments, \
+		script = script, div = div)
 	
 @app_lulu.route('/update_recent_rides', methods = ['POST'])
 def update_rides():
@@ -222,33 +227,11 @@ if __name__ == "__main__":
 	
 # =======================- Old work -==============================
 
-## I don't think I need this, but I'm keeping it in case something breaks!		
-# Get the stream for a SEGMENT
-# @app_lulu.route('/grade_segments')
-# def grade_segments():
-# 	segments = []
-# 	recent_activities = client.get_activities(limit=3)
-# 	for activity in recent_activities:
-# 		activity = client.get_activity(activity.id) # For some reason you _have_ to get the activity again, otherwise the efforts are NoneType
-# 		activity_efforts = activity.segment_efforts
-# 		for effort in activity_efforts:
-# 			hill_score, var_score = grade_segment(effort.segment.id)
-# 			effort.hill_score = round(hill_score, 2)
-# 			effort.var_score = round(100*var_score, 2)
-# 			segments.append(effort)
-# 	return render_template('layout.html', \
-# 		recent_segments = segments, athlete = app_lulu.curr_athlete)
-
-## This version also grades the segments after it grabs them, without first checking
-## if they're already in the db. The new version fixes this.
 # def get_segments_from_activities(activities):
 # 	segments = []
 # 	for activity in activities:
 # 		activity = client.get_activity(activity.id) # For some reason you _have_ to get the activity again, otherwise the efforts are NoneType
 # 		activity_efforts = activity.segment_efforts
 # 		for effort in activity_efforts:
-# 			hill_score, var_score = grade_segment(effort.segment.id)
-# 			effort.hill_score = round(hill_score, 2)
-# 			effort.var_score = round(100*var_score, 2)
-# 			segments.append(effort)
+# 			segments.append(effort.segment)
 # 	return segments
