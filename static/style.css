@@ -224,6 +224,7 @@ img#user_pic {
 
 #recent_segments {
 	/*border: solid 1px green;*/
+	display: hidden;
 }
 
 #recent_segments td {

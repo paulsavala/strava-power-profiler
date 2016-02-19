@@ -5,7 +5,7 @@
     <link rel=stylesheet type=text/css href='{{ url_for('static',filename='style.css')}}'>
     <link href="http://cdn.pydata.org/bokeh/release/bokeh-0.11.0.min.css" rel="stylesheet" type="text/css">
     <script type="text/javascript" src="http://cdn.pydata.org/bokeh/release/bokeh-0.11.0.min.js"></script>
-    <!-- Datepicker_after -->
+    <!-- Datepicker -->
     <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
     <script src="//code.jquery.com/jquery-1.10.2.js"></script>
   	<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
@@ -17,7 +17,9 @@
     	$( "#datepicker2" ).datepicker();
   		});
   	</script>
+  	<!-- End Datepicker -->
     {{ script | safe }}
+    <!-- jQuery testing -->
   </head>
   <body>
   	<div id="nav_bar">
@@ -55,6 +57,7 @@
   					<td class="table_label">{{ segment.name }}</td>
   					<td class="table_data">Hill score = {{ segment.hill_score }}</td>
   					<td class="table_data">Var score = {{ segment.var_score }}</td>
+  					<td class="table_data">Rank = {{ segment.athlete_rank / segment.leaderboard_size }}</td>
   				</tr>
   				{% endfor %}
   			</table>

@@ -6,6 +6,7 @@ from bokeh.plotting import figure, output_file, show
 from bokeh.embed import components
 import math
 from datetime import date, datetime
+import os
 
 app_lulu = Flask(__name__)
 
@@ -15,7 +16,6 @@ client = Client()
 url = client.authorization_url(client_id = 10117, \
 	redirect_uri = 'http://127.0.0.1:5000/authorization')
 
-# Strava API values
 
 
 app_lulu.client_secret = strava_secret_key
@@ -135,13 +135,28 @@ def check_db_for_segments(segments):
 		if db_segment is None: # if the segment is not yet in the db...
 			segment.hill_score, segment.var_score = grade_segment(segment.id)
 			insert_segment(segment)
+			segment.athlete_rank, segment.leaderboard_size = get_leaderboard_rank(segment.id)
 		else: # ...else the segment is already in the db, so grab it
 			segment_dict = retrieve_segment(segment.id)
 			segment.hill_score = round(segment_dict['hill_score'], 2)
 			segment.var_score = round(segment_dict['var_score'], 2)
+			segment.athlete_rank, segment.leaderboard_size = get_leaderboard_rank(segment.id)
 	return segments # This returned collection now has hill and var scores attached to each segment
 			
-
+# Gets all the attributes attached to an object
+def get_object_attrs(object):
+	attribs = ' '
+	for item in dir(object):
+		attribs += item + ' '
+	return attribs
+	
+def get_leaderboard_rank(segment_id, top_results_limit=100):
+	leaderboard = client.get_segment_leaderboard(segment_id, top_results_limit = top_results_limit)
+	for entry in leaderboard:
+		if entry.athlete_id == app_lulu.curr_athlete.id:
+			return entry.rank, leaderboard.entry_count
+	return 0, 0 # This occurs when the athlete is not found in the top_results_limit
+	
 # ==================- Flask functions -=====================
 
 # Have user connect with Strava
@@ -183,23 +198,18 @@ def power_profile(after_date, before_date):
 	return render_template('layout.html', \
 		recent_segments = segments, athlete = app_lulu.curr_athlete, \
 		recent_activities = recent_activities, script = script, div = div)
-
-# Testing work to write a segment into the db
-@app_lulu.route('/insert_segment_to_db')
-def insert_segment_to_db():
-	segment = client.get_segment(5147121)
-	segment.hill_score, segment.var_score = grade_segment(5147121)
-	segment.hill_score = round(segment.hill_score, 0)
-	segment.var_score = round(segment.var_score, 2)
-	result = insert_segment(segment)
-	return 'Done'
 	
 @app_lulu.route('/update_recent_rides', methods = ['POST'])
 def update_rides():
 	before_date = str(request.form['datepicker_before']).replace('/','-')
 	after_date = str(request.form['datepicker_after']).replace('/','-')
 	return redirect(url_for('power_profile', after_date = after_date, before_date = before_date))
-		
+	
+# Gets rank on a particular segment
+@app_lulu.route('/segment_rank')
+def insert_segment_to_db():
+	rank, entry_count = get_leaderboard_rank(3631486, 100)
+	return str(rank) + ' out of ' + str(entry_count)
 
 # ======================- Jinja filters -========================= 
 
