@@ -190,6 +190,7 @@ img#user_pic {
 
 #options {
 	border-bottom: solid 1px #d9d9d9;
+	padding: 3px;
 }
 
 #recents {
@@ -202,13 +203,13 @@ img#user_pic {
 	float: left;
 }
 
-#recent_rides {
-	background: linear-gradient(to right, #f2f2f2 , white);
+#recent_rides tr:nth-child(odd) {
+    background-color: #f2f2f2;
 }
 
 #recent_rides td {
-	padding: 2px;
-	border: solid 1px white;
+	padding: 5px;
+	border-bottom: solid 1px white;
 }
 
 #recent_rides td.table_label {

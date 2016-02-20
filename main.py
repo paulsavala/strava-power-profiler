@@ -13,11 +13,12 @@ app_lulu = Flask(__name__)
 
 app_lulu.vars = {}
 
+# Strava API values
+
+
 client = Client()
-url = client.authorization_url(client_id = 10117, \
+url = client.authorization_url(client_id = strava_client_id, \
 	redirect_uri = 'http://127.0.0.1:5000/authorization')
-
-
 
 app_lulu.client_secret = strava_secret_key
 app_lulu.client_id = strava_client_id
@@ -28,17 +29,12 @@ DATABASE = 'database.db'
 # ==================- Database functions -==================
 
 # This assumes that segment contains an id, name, hill_score and var_score
-def insert_segment(segment):
-	with sql.connect(DATABASE) as con:
-		cur = con.cursor()
-		try:
-			cur.execute('INSERT INTO segments (segment_id, segment_name, hill_score, \
-				var_score) VALUES (?,?,?,?)', (segment.id, segment.name, segment.hill_score, \
-				segment.var_score))
-			con.commit()
-		except sql.IntegrityError:
-			return render_template('error.html', error = str(segment.id))
-	pass
+def insert_segment(segment, cur, con):
+	cur.execute('INSERT INTO segments (segment_id, segment_name, hill_score, \
+		var_score) VALUES (?,?,?,?)', (segment.id, segment.name, segment.hill_score, \
+		segment.var_score))
+	con.commit()
+	return segment.id
 				
 # A sqlite row_factory, which gives the results as a dict 
 def dict_factory(cursor, row):
@@ -48,14 +44,9 @@ def dict_factory(cursor, row):
     return d
 
 # Gets segment from db by segment id (_not_ the db id)
-def retrieve_segment(segment_id):
-	with sql.connect(DATABASE) as con:
-		con.row_factory = dict_factory
-		cur = con.cursor()
-		if cur.execute('SELECT * FROM %s WHERE %s = %d' % ('segments', 'segment_id', segment_id)):
-			segment = cur.fetchone()
-		else:
-			segment = {}
+def retrieve_segment(segment_id, cur):
+	cur.execute('SELECT * FROM %s WHERE %s = %d' % ('segments', 'segment_id', segment_id))
+	segment = cur.fetchone()
 	return segment
 
 # ====================- Helper functions -==================
@@ -71,9 +62,8 @@ def stream_to_df(stream):
 
 # Compute the variability score
 def get_var_score(grad_series):
-	var_score = sum(abs(grad_series.diff().fillna(0)))
+	var_score = sum(abs(grad_series.diff().fillna(0).replace(np.nan, 0).replace(np.inf, 0)))
 	return 1000*var_score # multiplying by 1000 is scaling
-# GETTING NEGATIVE VARIABILITY SCORES. SHOULD THERE BE AN ABSOLUTE VALUE HERE?
 	
 # Grades a hill according to how uphill / downhill it is
 # "Large" positive values been long, steep climbs
@@ -92,7 +82,7 @@ def get_hill_score(grad_series, dist_series):
 def get_segment_df(id):
 	stream = client.get_segment_streams(id, types=['distance', 'altitude'], resolution='high')
 	segment_stream_df = stream_to_df(stream)
-	segment_grad_df = segment_stream_df.diff()['altitude'] / segment_stream_df.diff()['distance']
+	segment_grad_df = segment_stream_df.diff()['altitude'] / segment_stream_df.diff()['distance'].replace(0,segment_stream_df.diff()['distance'].mean())
 	segment_stream_df['gradient'] = segment_grad_df.fillna(0)
 	return segment_stream_df
 
@@ -131,21 +121,22 @@ def placeholder_graph():
 # Takes in a collection (list, or BatchedResultsIterator) of segments and checks to
 # see if they're already in the db. If so it fetches them, if not it calculates the
 # score and writes them into the db.
-def check_db_for_segments(segments):
+def check_db_for_segments(segments, cur, con):
+	inserted_segments = []
 	for segment in segments:
-		db_segment = retrieve_segment(segment.id)
+		db_segment = retrieve_segment(segment.id, cur)
 		if db_segment is None: # if the segment is not yet in the db...
 			segment.hill_score, segment.var_score = grade_segment(segment.id)
-			insert_segment(segment)
-			segment.athlete_rank, segment.leaderboard_size = get_leaderboard_rank(segment.id)
-			segment.ranking_score = compute_ranking_score(segment.athlete_rank, segment.leaderboard_size)
-		else: # ...else the segment is already in the db, so grab it
-			segment_dict = retrieve_segment(segment.id)
-			segment.hill_score = round(segment_dict['hill_score'], 2)
-			segment.var_score = round(segment_dict['var_score'], 2)
-			segment.athlete_rank, segment.leaderboard_size = get_leaderboard_rank(segment.id)
-			segment.ranking_score = compute_ranking_score(segment.athlete_rank, segment.leaderboard_size)
-	return segments # This returned collection now has hill and var scores attached to each segment
+			this_id = insert_segment(segment, cur, con)
+			inserted_segments.append(this_id)
+			#segment.athlete_rank, segment.leaderboard_size = get_leaderboard_rank(segment.id)
+			#segment.ranking_score = compute_ranking_score(segment.athlete_rank, segment.leaderboard_size)
+		else: # ...else the segment is already in the db
+			segment.hill_score = round(db_segment['hill_score'], 2)
+			segment.var_score = round(db_segment['var_score'], 2)
+# 			#segment.athlete_rank, segment.leaderboard_size = get_leaderboard_rank(segment.id)
+# 			#segment.ranking_score = compute_ranking_score(segment.athlete_rank, segment.leaderboard_size)
+	return segments, inserted_segments # This returned collection now has hill and var scores attached to each segment
 			
 # Gets all the attributes attached to an object
 def get_object_attrs(object):
@@ -190,6 +181,7 @@ def authorization():
 @app_lulu.route('/power_profile', defaults = {'after_date': '', 'before_date': ''})
 @app_lulu.route('/power_profile/<after_date>/<before_date>')
 def power_profile(after_date, before_date):
+# 	start = time.time()
 	if after_date == '' or before_date == '':
 		recent_activities = client.get_activities(limit = 3)
 	else:
@@ -200,16 +192,18 @@ def power_profile(after_date, before_date):
 	
 	segments = get_segments_from_activities(recent_activities)
 	
-	start = time.time()
-	for activity in recent_activities:
-		segments[activity.id] = check_db_for_segments(segments[activity.id])
-	end = time.time()
-	elapsed_time = end - start
+	with sql.connect(DATABASE) as con:
+		con.row_factory = dict_factory
+		cur = con.cursor()
+		for activity in recent_activities:
+			segments[activity.id], inserted_segments = check_db_for_segments(segments[activity.id], cur, con)
 
 	script, div = placeholder_graph()
+	# end = time.time()
+# 	elapsed_time = end - start
 	return render_template('layout.html', athlete = app_lulu.curr_athlete, \
 		recent_activities = recent_activities, activity_segments = segments, \
-		script = script, div = div, debug = str(elapsed_time))
+		script = script, div = div, debug = str(inserted_segments))
 	
 @app_lulu.route('/update_recent_rides', methods = ['POST'])
 def update_rides():
@@ -220,11 +214,12 @@ def update_rides():
 # Gets rank on a particular segment
 @app_lulu.route('/segment_rank')
 def insert_segment_to_db():
-	segment_df = get_segment_df(5543676)
-	dist_diff = segment_df['distance'].diff().drop(0)
-	grad_series = segment_df['gradient'].drop(0).replace(np.inf, 0).replace(np.nan, 0)
-	
-	return str(grad_series[grad_series.isnull()])
+	activity = client.get_activity(497349462)
+	activity_efforts = activity.segment_efforts
+	kom_ranks = []
+	# for effort in activity_efforts:
+# 		kom_ranks.append(effort.kom_rank)
+	return str(kom_ranks)
 
 # ======================- Jinja filters -========================= 
 
