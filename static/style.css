@@ -189,13 +189,11 @@ img#user_pic {
 }
 
 #options {
-	border-top: solid 1px gray;
-	border-bottom: solid 1px gray;
+	border-bottom: solid 1px #d9d9d9;
 }
 
 #recents {
 	overflow: hidden;
-	background-color: #f2f2f2;
 	font-family: Helvetica;
 }
 
@@ -205,7 +203,7 @@ img#user_pic {
 }
 
 #recent_rides {
-	/*border: solid 1px red;*/
+	background: linear-gradient(to right, #f2f2f2 , white);
 }
 
 #recent_rides td {

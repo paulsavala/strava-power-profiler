@@ -2,9 +2,6 @@ import pandas as pd
 import sqlite3 as sql
 from datetime import date, datetime
 
-date = '02/19/2016'
-stripped_date = datetime.strptime(date, '%m/%d/%Y')
-print(stripped_date)
 
 # DATABASE = '/Users/paulsavala/strava_v1/database.db'
 # 
