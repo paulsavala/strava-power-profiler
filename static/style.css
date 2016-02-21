@@ -186,6 +186,7 @@ img#user_pic {
 	width: 60%;
 	height: 100%;
 	float: left;
+	padding: 10px;
 }
 
 /* Options bar */

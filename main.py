@@ -91,7 +91,16 @@ def grade_segment(id):
 	segment_df = get_segment_df(id)
 	hill_score = get_hill_score(segment_df['gradient'], segment_df['distance'])
 	var_score = get_var_score(segment_df['gradient'])
-	return hill_score, var_score
+	climb_val, roleur_val, sprint_val, tt_val = get_graph_scores(id, hill_score, var_score)
+	return hill_score, var_score, climb_val, roleur_val, sprint_val, tt_val
+
+def get_graph_scores(id, hill_score, var_score):
+	segment = client.get_segment(id)
+	climb_val = max(hill_score, 0) * 4 / 3;
+	roleur_val = var_score / 500;
+	sprint_val = min(abs(100 - (abs(float(segment.distance) - 200) + roleur_val)), 0);
+	tt_val = 50 * (math.log(float(segment.distance)) / 1000) / (1 + roleur_val);
+	return climb_val, roleur_val, sprint_val, tt_val;
 
 # Returns a dict, where each key is the activity id, and the value is a list of segments
 def get_segments_from_activities(activities):
@@ -126,7 +135,8 @@ def check_db_for_segments(segments, cur, con):
 	for segment in segments:
 		db_segment = retrieve_segment(segment.id, cur)
 		if db_segment is None: # if the segment is not yet in the db...
-			segment.hill_score, segment.var_score = grade_segment(segment.id)
+			segment.hill_score, segment.var_score, segment.climb_val, \
+				segment.roleur_val, segment.sprint_val, segment.tt_val = grade_segment(segment.id)
 			this_id = insert_segment(segment, cur, con)
 			inserted_segments.append(this_id)
 			#segment.athlete_rank, segment.leaderboard_size = get_leaderboard_rank(segment.id)
@@ -134,6 +144,8 @@ def check_db_for_segments(segments, cur, con):
 		else: # ...else the segment is already in the db
 			segment.hill_score = round(db_segment['hill_score'], 2)
 			segment.var_score = round(db_segment['var_score'], 2)
+			segment.climb_val, segment.roleur_val, segment.sprint_val, \
+				segment.tt_val = get_graph_scores(segment.id, segment.hill_score, segment.var_score)
 # 			#segment.athlete_rank, segment.leaderboard_size = get_leaderboard_rank(segment.id)
 # 			#segment.ranking_score = compute_ranking_score(segment.athlete_rank, segment.leaderboard_size)
 	return segments, inserted_segments # This returned collection now has hill and var scores attached to each segment

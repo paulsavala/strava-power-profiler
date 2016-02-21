@@ -13,48 +13,89 @@
 	<script src="https://code.highcharts.com/modules/exporting.js"></script>
 	<script>
 	/* Radar chart */	
+	// function radar_chart(data_points) {
+// 
+// 		var category_names = ['Climber', 'Roleur', 'Sprinter', 'Time Trialist'];
+// 		
+// 		$('#radar_chart').highcharts({
+// 
+// 			chart: {
+// 				polar: true,
+// 				type: 'area'
+// 			},
+// 
+// 			title: {
+// 				text: 'Segment Classifiction',
+// 				x: 0
+// 			},
+// 
+// 			pane: {
+// 				size: '80%'
+// 			},
+// 
+// 			xAxis: {
+// 				categories: category_names,
+// 				tickmarkPlacement: 'on',
+// 				lineWidth: 0
+// 			},
+// 
+// 			yAxis: {
+// 				gridLineInterpolation: 'polygon',
+// 				lineWidth: 0,
+// 				min: 0
+// 			},
+// 
+// 			series: [{
+// 				name: '',
+// 				data: data_points,
+// 				pointPlacement: 'on'
+// 			}]
+// 
+// 		});
+// 		
+// 	};
+	
 	function radar_chart(data_points) {
-
 		var category_names = ['Climber', 'Roleur', 'Sprinter', 'Time Trialist'];
-		
-		$('#radar_chart').highcharts({
-
+    	$('#radar_chart').highcharts({
 			chart: {
-				polar: true,
-				type: 'area'
+				type: 'bar'
 			},
-
+			
 			title: {
-				text: 'Segment Classifiction',
-				x: 0
+				text: 'Segment Classification'
 			},
-
-			pane: {
-				size: '80%'
-			},
-
+			
 			xAxis: {
 				categories: category_names,
-				tickmarkPlacement: 'on',
-				lineWidth: 0
+				title: {
+					text: null
+				}
 			},
-
+			
 			yAxis: {
-				gridLineInterpolation: 'polygon',
-				lineWidth: 0,
-				min: 0
+				min: 0,
 			},
-
+			
+			plotOptions: {
+				bar: {
+					dataLabels: {
+						enabled: false
+					}
+				}
+			},
+			
+			credits: {
+				enabled: false
+			},
+			
 			series: [{
-				name: '',
-				data: data_points,
-				pointPlacement: 'on'
+				name: 'Values',
+				data: data_points
 			}]
-
-		});
-		
+    	});
 	};
-	
+
 	/* Call the radar chart at render time with 0 values */
 	$( function () {
 		radar_chart([0,0,0,0]);
@@ -80,15 +121,22 @@
 			{% for segment in activity_segments[activity.id] %}
 				$('#segment_{{ segment.id }}')
 				.click(function() {
-					radar_chart([1,2,3,4]);
+					var climb_val = {{ segment.climb_val }};
+					var roleur_val = {{ segment.roleur_val }};
+					var sprint_val = {{ segment.sprint_val }};
+					var tt_val = {{ segment.tt_val }};
+					radar_chart([climb_val, roleur_val, sprint_val, tt_val]);
 					$('#segment_stats_name').text('{{ segment.name }}');
 					$('#segment_stats_distance').text('{{ segment.distance }}');
 					$('#segment_stats_hill_score').text('{{ segment.hill_score }}');
 					$('#segment_stats_var_score').text('{{ segment.var_score }}');
+					$('#segment_stats_climb_score').text(climb_val);
+					$('#segment_stats_roleur_score').text(roleur_val);
+					$('#segment_stats_sprint_score').text(sprint_val);
+					$('#segment_stats_tt_score').text(tt_val);
 				});
 			{% endfor %}
     	{% endfor %}
-
     });
 	</script>
   </head>
@@ -104,6 +152,10 @@
   			<div>Distance: <span id="segment_stats_distance"></span></div>
   			<div>Hill score: <span id="segment_stats_hill_score"></span></div>
   			<div>Var score: <span id="segment_stats_var_score"></span></div>
+  			<div>Climb score: <span id="segment_stats_climb_score"></span></div>
+  			<div>Roleur score: <span id="segment_stats_roleur_score"></span></div>
+  			<div>Sprint score: <span id="segment_stats_sprint_score"></span></div>
+  			<div>TT score: <span id="segment_stats_tt_score"></span></div>
   		</div>
   		<div id="radar_chart"></div>
   	</div>
