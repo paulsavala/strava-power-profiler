@@ -98,7 +98,7 @@ def get_graph_scores(id, hill_score, var_score):
 	segment = client.get_segment(id)
 	climb_val = max(hill_score, 0) * 4 / 3;
 	roleur_val = var_score / 500;
-	sprint_val = min(abs(100 - (abs(float(segment.distance) - 200) + roleur_val)), 0);
+	sprint_val = max(abs(100 - (abs(float(segment.distance) - 200) + roleur_val)), 0);
 	tt_val = 50 * (math.log(float(segment.distance)) / 1000) / (1 + roleur_val);
 	return climb_val, roleur_val, sprint_val, tt_val;
 
@@ -113,19 +113,6 @@ def get_segments_from_activities(activities):
 			activity_segments.append(effort.segment)
 		segments[activity.id] = activity_segments
 	return segments
-	
-# This is a temporary, static graph acting as a placeholder
-def placeholder_graph():
-	p = figure(plot_width = 450, plot_height = 450)
-	p.logo = None
-	p.toolbar_location = None
-	p.patch([-3,0,2,0], [0,2,0,-1], line_width = 2, alpha = 0.5)
-	p.axis.minor_tick_line_color = None
-	p.xaxis.axis_label = ''
-	p.yaxis.axis_label = ''
-	
-	script, div = components(p)
-	return script, div
 
 # Takes in a collection (list, or BatchedResultsIterator) of segments and checks to
 # see if they're already in the db. If so it fetches them, if not it calculates the
@@ -193,17 +180,23 @@ def authorization():
 @app_lulu.route('/power_profile', defaults = {'after_date': '', 'before_date': ''})
 @app_lulu.route('/power_profile/<after_date>/<before_date>')
 def power_profile(after_date, before_date):
-# 	start = time.time()
-	if after_date == '' or before_date == '':
+	start = time.time()
+	if (after_date == '' or before_date == ''):
 		recent_activities = client.get_activities(limit = 3)
 	else:
 		after = datetime.strptime(after_date, '%m-%d-%Y')
 		before = datetime.strptime(before_date, '%m-%d-%Y')
 		limit = 50
 		recent_activities = client.get_activities(before = before, after = after, limit = limit)
-	
+	end = time.time()
+	elapsed_time_get_activities = end - start
+ 	
+	start = time.time()
 	segments = get_segments_from_activities(recent_activities)
+	end = time.time()
+	elapsed_time_get_segments = end - start
 	
+	start = time.time()
 	with sql.connect(DATABASE) as con:
 		con.row_factory = dict_factory
 		cur = con.cursor()
@@ -211,13 +204,16 @@ def power_profile(after_date, before_date):
 		for activity in recent_activities:
 			segments[activity.id], this_activity_inserted = check_db_for_segments(segments[activity.id], cur, con)
 			segments_inserted.append(this_activity_inserted)
-
-	script, div = placeholder_graph()
-	# end = time.time()
-# 	elapsed_time = end - start
+	end = time.time()
+	elapsed_time_check_db = end - start
+ 	
+	elapsed_time = ['get_activities: %f' % elapsed_time_get_activities, \
+ 		'get_activities: %f' % elapsed_time_get_segments, \
+ 		'get_activities: %f' % elapsed_time_check_db]
+	
 	return render_template('layout.html', athlete = app_lulu.curr_athlete, \
 		recent_activities = recent_activities, activity_segments = segments, \
-		script = script, div = div, debug = str(segments_inserted))
+		debug = str(elapsed_time))
 	
 @app_lulu.route('/update_recent_rides', methods = ['POST'])
 def update_rides():
