@@ -12,8 +12,11 @@
 	<script src="https://code.highcharts.com/highcharts-more.js"></script>
 	<script src="https://code.highcharts.com/modules/exporting.js"></script>
 	<script>
-	$(function () {
+	/* Radar chart */	
+	function radar_chart(data_points) {
 
+		var category_names = ['Climber', 'Roleur', 'Sprinter', 'Time Trialist'];
+		
 		$('#radar_chart').highcharts({
 
 			chart: {
@@ -22,7 +25,7 @@
 			},
 
 			title: {
-				text: 'Cyclist Classifiction',
+				text: 'Segment Classifiction',
 				x: 0
 			},
 
@@ -31,7 +34,7 @@
 			},
 
 			xAxis: {
-				categories: ['Climber', 'Roleur', 'Sprinter', 'Time Trialist'],
+				categories: category_names,
 				tickmarkPlacement: 'on',
 				lineWidth: 0
 			},
@@ -43,34 +46,51 @@
 			},
 
 			series: [{
-				name: 'Your strengths',
-				data: [6, 7, 8, 2],
+				name: '',
+				data: data_points,
 				pointPlacement: 'on'
 			}]
 
 		});
+		
+	};
+	
+	/* Call the radar chart at render time with 0 values */
+	$( function () {
+		radar_chart([0,0,0,0]);
 	});
-	</script>
-    <script>
-  		$(function() {
+	
+	/* Datepicker */
+	$(function() {
     	$( "#datepicker1" ).datepicker();
-  		});
-  		$(function() {
+    });
+  	
+  	$(function() {
     	$( "#datepicker2" ).datepicker();
-  		});
-  	</script>
-  	<!-- End Datepicker -->
-    <script>
-    $(function() { 
+  	});
+  		
+	/* Update the radar chart for the clicked segment */
+	$(function() { 
     	{% for activity in recent_activities %}
 			$('#activity_{{ activity.id }}')
 			.mouseover(function() {
 				$('#recent_segments').children().css('display', 'none');
 				$('#segments_{{ activity.id }}').css('display', 'block'); 
 			});
+			{% for segment in activity_segments[activity.id] %}
+				$('#segment_{{ segment.id }}')
+				.click(function() {
+					radar_chart([1,2,3,4]);
+					$('#segment_stats_name').text('{{ segment.name }}');
+					$('#segment_stats_distance').text('{{ segment.distance }}');
+					$('#segment_stats_hill_score').text('{{ segment.hill_score }}');
+					$('#segment_stats_var_score').text('{{ segment.var_score }}');
+				});
+			{% endfor %}
     	{% endfor %}
+
     });
-    </script>
+	</script>
   </head>
   <body>
   	<div id="nav_bar">
@@ -79,7 +99,13 @@
   		<div id="username">{{ athlete.username }}</div>
   	</div>
   	<div id="graph">
-  		<div id="radar_chart" style="min-width: 500px; min-height: 500px; margin: 0 auto; border: solid 1px red;"></div>
+  		<div id="segment_stats">
+  			<div>Segment name: <span id="segment_stats_name"></span></div>
+  			<div>Distance: <span id="segment_stats_distance"></span></div>
+  			<div>Hill score: <span id="segment_stats_hill_score"></span></div>
+  			<div>Var score: <span id="segment_stats_var_score"></span></div>
+  		</div>
+  		<div id="radar_chart"></div>
   	</div>
   	<div id="options">
   		<div id="recent_rides">
@@ -106,11 +132,8 @@
   			{% for activity in recent_activities %}
   			<table id="segments_{{ activity.id }}">
   				{% for segment in activity_segments[activity.id] %}
-  				<tr>
+  				<tr id="segment_{{ segment.id }}">
   					<td class="table_label">{{ segment.name }}</td>
-  					<td class="table_data">Hill score = {{ segment.hill_score }}</td>
-  					<td class="table_data">Var score = {{ segment.var_score }}</td>
-  					<!-- <td class="table_data">Rank = {{ segment.ranking_score }}</td> -->
   				</tr>
   				{% endfor %}
   			</table>
@@ -118,7 +141,7 @@
   		</div>
   	</div>
   	<div id="footer">
-  		{{ debug }}
+  		{{ debug }}<span id="testing"></span>
   	</div>
   </body>
 </html>
