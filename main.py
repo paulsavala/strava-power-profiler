@@ -195,15 +195,17 @@ def power_profile(after_date, before_date):
 	with sql.connect(DATABASE) as con:
 		con.row_factory = dict_factory
 		cur = con.cursor()
+		segments_inserted = []
 		for activity in recent_activities:
-			segments[activity.id], inserted_segments = check_db_for_segments(segments[activity.id], cur, con)
+			segments[activity.id], this_activity_inserted = check_db_for_segments(segments[activity.id], cur, con)
+			segments_inserted.append(this_activity_inserted)
 
 	script, div = placeholder_graph()
 	# end = time.time()
 # 	elapsed_time = end - start
 	return render_template('layout.html', athlete = app_lulu.curr_athlete, \
 		recent_activities = recent_activities, activity_segments = segments, \
-		script = script, div = div, debug = str(inserted_segments))
+		script = script, div = div, debug = str(segments_inserted))
 	
 @app_lulu.route('/update_recent_rides', methods = ['POST'])
 def update_rides():

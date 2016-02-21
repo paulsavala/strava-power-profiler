@@ -3,12 +3,54 @@
   <head>
     <title>Strava Power Profiler</title>
     <link rel=stylesheet type=text/css href='{{ url_for('static',filename='style.css')}}'>
-    <link href="http://cdn.pydata.org/bokeh/release/bokeh-0.11.0.min.css" rel="stylesheet" type="text/css">
-    <script type="text/javascript" src="http://cdn.pydata.org/bokeh/release/bokeh-0.11.0.min.js"></script>
     <!-- jQuery stuff -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js">></script>
   	<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css">
 	<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+    <!-- Radar chart -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+	<script src="https://code.highcharts.com/highcharts-more.js"></script>
+	<script src="https://code.highcharts.com/modules/exporting.js"></script>
+	<script>
+	$(function () {
+
+		$('#radar_chart').highcharts({
+
+			chart: {
+				polar: true,
+				type: 'area'
+			},
+
+			title: {
+				text: 'Cyclist Classifiction',
+				x: 0
+			},
+
+			pane: {
+				size: '80%'
+			},
+
+			xAxis: {
+				categories: ['Climber', 'Roleur', 'Sprinter', 'Time Trialist'],
+				tickmarkPlacement: 'on',
+				lineWidth: 0
+			},
+
+			yAxis: {
+				gridLineInterpolation: 'polygon',
+				lineWidth: 0,
+				min: 0
+			},
+
+			series: [{
+				name: 'Your strengths',
+				data: [6, 7, 8, 2],
+				pointPlacement: 'on'
+			}]
+
+		});
+	});
+	</script>
     <script>
   		$(function() {
     	$( "#datepicker1" ).datepicker();
@@ -18,7 +60,6 @@
   		});
   	</script>
   	<!-- End Datepicker -->
-    {{ script | safe }}
     <script>
     $(function() { 
     	{% for activity in recent_activities %}
@@ -38,7 +79,7 @@
   		<div id="username">{{ athlete.username }}</div>
   	</div>
   	<div id="graph">
-  		<div id="bokeh_div">{{ div | safe }}</div>
+  		<div id="radar_chart" style="min-width: 500px; min-height: 500px; margin: 0 auto; border: solid 1px red;"></div>
   	</div>
   	<div id="options">
   		<div id="recent_rides">
