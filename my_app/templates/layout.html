@@ -12,51 +12,9 @@
 	<script src="https://code.highcharts.com/highcharts-more.js"></script>
 	<script src="https://code.highcharts.com/modules/exporting.js"></script>
 	<script>
-	/* Radar chart */	
-	// function radar_chart(data_points) {
-// 
-// 		var category_names = ['Climber', 'Roleur', 'Sprinter', 'Time Trialist'];
-// 		
-// 		$('#radar_chart').highcharts({
-// 
-// 			chart: {
-// 				polar: true,
-// 				type: 'area'
-// 			},
-// 
-// 			title: {
-// 				text: 'Segment Classifiction',
-// 				x: 0
-// 			},
-// 
-// 			pane: {
-// 				size: '80%'
-// 			},
-// 
-// 			xAxis: {
-// 				categories: category_names,
-// 				tickmarkPlacement: 'on',
-// 				lineWidth: 0
-// 			},
-// 
-// 			yAxis: {
-// 				gridLineInterpolation: 'polygon',
-// 				lineWidth: 0,
-// 				min: 0
-// 			},
-// 
-// 			series: [{
-// 				name: '',
-// 				data: data_points,
-// 				pointPlacement: 'on'
-// 			}]
-// 
-// 		});
-// 		
-// 	};
-	
+	/* Bar graph */	
 	function radar_chart(data_points) {
-		var category_names = ['Climber', 'Roleur', 'Sprinter', 'Time Trialist'];
+		var category_names = ['Climber', 'Puncheur', 'Sprinter', 'Time Trialist'];
     	$('#radar_chart').highcharts({
 			chart: {
 				type: 'bar'
@@ -99,18 +57,9 @@
 	/* Call the radar chart at render time with 0 values */
 	$( function () {
 		radar_chart([0,0,0,0]);
-	});
-	
-	/* Datepicker */
-	$(function() {
-    	$( "#datepicker1" ).datepicker();
-    });
-  	
-  	$(function() {
-    	$( "#datepicker2" ).datepicker();
-  	});
-  		
-	/* Update the radar chart for the clicked segment */
+	}); 
+  
+	/*  Update the radar chart for the clicked segment */
 	$(function() { 
     	{% for activity in recent_activities %}
 			$('#activity_{{ activity.id }}')
@@ -118,26 +67,35 @@
 				$('#recent_segments').children().css('display', 'none');
 				$('#segments_{{ activity.id }}').css('display', 'block'); 
 			});
-			{% for segment in activity_segments[activity.id] %}
-				$('#segment_{{ segment.id }}')
+			{% for effort in activity_segments[activity.id] %}
+				$('#segment_{{ effort.id }}')
 				.click(function() {
-					var climb_val = {{ segment.climb_val }};
-					var roleur_val = {{ segment.roleur_val }};
-					var sprint_val = {{ segment.sprint_val }};
-					var tt_val = {{ segment.tt_val }};
-					radar_chart([climb_val, roleur_val, sprint_val, tt_val]);
-					$('#segment_stats_name').text('{{ segment.name }}');
-					$('#segment_stats_distance').text('{{ segment.distance }}');
-					$('#segment_stats_hill_score').text('{{ segment.hill_score }}');
-					$('#segment_stats_var_score').text('{{ segment.var_score }}');
+					var climb_val = {{ effort.climb_val }};
+					var puncheur_val = {{ effort.puncheur_val }};
+					var sprint_val = {{ effort.sprint_val }};
+					var tt_val = {{ effort.tt_val }};
+					radar_chart([climb_val, puncheur_val, sprint_val, tt_val]);
+					$('#segment_stats_name').text('{{ effort.name }}');
+					$('#segment_stats_distance').text('{{ effort.distance }}');
+					$('#segment_stats_hill_score').text('{{ effort.hill_score }}');
+					$('#segment_stats_var_score').text('{{ effort.var_score }}');
 					$('#segment_stats_climb_score').text(climb_val);
-					$('#segment_stats_roleur_score').text(roleur_val);
+					$('#segment_stats_puncheur_score').text(puncheur_val);
 					$('#segment_stats_sprint_score').text(sprint_val);
 					$('#segment_stats_tt_score').text(tt_val);
 				});
 			{% endfor %}
     	{% endfor %}
     });
+    
+    /* Datepicker */
+	$(function() {
+    	$( "#datepicker1" ).datepicker();
+    });
+  	
+  	$(function() {
+    	$( "#datepicker2" ).datepicker();
+  	});
 	</script>
   </head>
   <body>
@@ -153,7 +111,7 @@
   			<div>Hill score: <span id="segment_stats_hill_score"></span></div>
   			<div>Var score: <span id="segment_stats_var_score"></span></div>
   			<div>Climb score: <span id="segment_stats_climb_score"></span></div>
-  			<div>Roleur score: <span id="segment_stats_roleur_score"></span></div>
+  			<div>Puncheur score: <span id="segment_stats_puncheur_score"></span></div>
   			<div>Sprint score: <span id="segment_stats_sprint_score"></span></div>
   			<div>TT score: <span id="segment_stats_tt_score"></span></div>
   		</div>
@@ -183,9 +141,17 @@
   		<div id="recent_segments">
   			{% for activity in recent_activities %}
   			<table id="segments_{{ activity.id }}">
-  				{% for segment in activity_segments[activity.id] %}
-  				<tr id="segment_{{ segment.id }}">
-  					<td class="table_label">{{ segment.name }}</td>
+  				{% for effort in activity_segments[activity.id] %}
+  				<tr id="segment_{{ effort.id }}">
+  					<td class="table_label">{{ effort.name }}</td>
+  					<td class="table_label">{{ effort.hill_score }}</td>
+  					<td class="table_label">{{ effort.var_score }}</td>
+  				</tr>
+  				<tr>
+  					<td class="table_label">{{ effort.climb_val }}</td>
+  					<td class="table_label">{{ effort.puncheur_val }}</td>
+  					<td class="table_label">{{ effort.sprint_val }}</td>
+  					<td class="table_label">{{ effort.tt_val }}</td>
   				</tr>
   				{% endfor %}
   			</table>

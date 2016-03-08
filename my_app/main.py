@@ -8,23 +8,12 @@ from bokeh.embed import components
 import math
 from datetime import date, datetime
 import time
-
-app_lulu = Flask(__name__)
-
-app_lulu.vars = {}
-
-# Strava API values
-
+import model
+from app import app, model, controller
 
 client = Client()
 url = client.authorization_url(client_id = strava_client_id, \
 	redirect_uri = 'http://127.0.0.1:5000/authorization')
-
-app_lulu.client_secret = strava_secret_key
-app_lulu.client_id = strava_client_id
-
-#DATABASE = '/Users/paulsavala/strava_v1/database.db'
-DATABASE = 'database.db'
 
 # ==================- Database functions -==================
 
@@ -102,16 +91,32 @@ def get_graph_scores(id, hill_score, var_score):
 	tt_val = 50 * (math.log(float(segment.distance)) / 1000) / (1 + roleur_val);
 	return climb_val, roleur_val, sprint_val, tt_val;
 
-# Returns a dict, where each key is the activity id, and the value is a list of segments
+# Original (working) version of this function, but it's incredibly slow
+# def get_segments_from_activities(activities):
+# 	segments = {}
+# 	for activity in activities:
+# 		activity_segments = []
+# 		activity = client.get_activity(activity.id) # For some reason you _have_ to get the activity again, otherwise the efforts are NoneType
+# 		activity_efforts = activity.segment_efforts
+# 		for effort in activity_efforts:
+# 			activity_segments.append(effort.segment)
+# 		segments[activity.id] = activity_segments
+# 	return segments
+
+# Slight performance improvement over original version (above)
 def get_segments_from_activities(activities):
-	segments = {}
-	for activity in activities:
-		activity_segments = []
-		activity = client.get_activity(activity.id) # For some reason you _have_ to get the activity again, otherwise the efforts are NoneType
-		activity_efforts = activity.segment_efforts
-		for effort in activity_efforts:
-			activity_segments.append(effort.segment)
-		segments[activity.id] = activity_segments
+	# Converting ids to a list gives a drastic speedup
+	activity_id_list = [activity.id for activity in activities]
+	activities = map(client.get_activity, activity_id_list)
+	#all_segment_efforts = map(lambda x: x.segment_efforts, activities)
+	#segment_efforts_by_activity = [activity.segment_efforts for activity in activities]
+	#segments_by_activity = [effort.segment for effort in segment_efforts_by_activity]
+	
+	#segments_by_activity = map(segments_from_activity, activities)
+	#segments = [[effort.segment for effort in activity.segment_efforts] for activity in activities]
+	#activities_segment_efforts = map(lambda x: x.segment_efforts, activities)
+	segments = {activity.id: [effort.segment for effort in activity.segment_efforts] for activity in activities}
+	#segments = {activity.id: list(map(lambda x: x.segment, activity.segment_efforts)) for activity in activities}
 	return segments
 
 # Takes in a collection (list, or BatchedResultsIterator) of segments and checks to
@@ -197,19 +202,19 @@ def power_profile(after_date, before_date):
 	elapsed_time_get_segments = end - start
 	
 	start = time.time()
-	with sql.connect(DATABASE) as con:
-		con.row_factory = dict_factory
-		cur = con.cursor()
-		segments_inserted = []
-		for activity in recent_activities:
-			segments[activity.id], this_activity_inserted = check_db_for_segments(segments[activity.id], cur, con)
-			segments_inserted.append(this_activity_inserted)
+	# with sql.connect(DATABASE) as con:
+# 		con.row_factory = dict_factory
+# 		cur = con.cursor()
+# 		segments_inserted = []
+# 		for activity in recent_activities:
+# 			segments[activity.id], this_activity_inserted = check_db_for_segments(segments[activity.id], cur, con)
+# 			segments_inserted.append(this_activity_inserted)
 	end = time.time()
 	elapsed_time_check_db = end - start
  	
 	elapsed_time = ['get_activities: %f' % elapsed_time_get_activities, \
- 		'get_activities: %f' % elapsed_time_get_segments, \
- 		'get_activities: %f' % elapsed_time_check_db]
+ 		'get_segments: %f' % elapsed_time_get_segments, \
+ 		'get_check_db: %f' % elapsed_time_check_db]
 	
 	return render_template('layout.html', athlete = app_lulu.curr_athlete, \
 		recent_activities = recent_activities, activity_segments = segments, \
