@@ -27,9 +27,9 @@ def authorization():
 	app.vars['access_token'] = access_token
 	
 	my_client = StravaClient()
-	strava_athlete = my_client.get_athlete()
+	app.vars['athlete'] = my_client.get_athlete()
 	
-	return render_template('menu.html', athlete = strava_athlete)
+	return redirect('power_profile')
 
 # Build the power profile page by grabbing recent activities and segments and populating the graph
 @app.route('/power_profile', defaults = {'after_date': '', 'before_date': ''})
@@ -67,7 +67,7 @@ def power_profile(after_date, before_date):
 	
 	return render_template('layout.html', athlete = None, \
 		recent_activities = recent_activities, activity_segments = activities_segment_efforts, \
-		debug = str(seg))
+		debug = str())
 	
 @app.route('/update_recent_rides', methods = ['POST'])
 def update_rides():

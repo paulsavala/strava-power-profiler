@@ -54,10 +54,11 @@ def get_segment_scores(effort):
 	
 	climb_val = max(hill_score, 0) * 4 / 3;
 	puncheur_val = var_score;
-	sprint_val = max(100 - abs((1000*abs(float(effort.distance) - 250) + puncheur_val + hill_score)), 0);
-	tt_val = 50 * (np.log(float(effort.distance))) / (1 + puncheur_val);
+	sprint_val = max(100 - abs(float(effort.distance) - 250)/5 - puncheur_val - hill_score, 0);
+	tt_val = max(0, 25 * (np.log(float(effort.distance)/1000)) / np.sqrt(1 + puncheur_val));
 
-	return var_score, hill_score, climb_val, puncheur_val, sprint_val, tt_val
+	return int(var_score), int(hill_score), int(climb_val), int(puncheur_val), \
+	 	int(sprint_val), int(tt_val)
 	
 def attach_scores_to_efforts(effort):
 	if type(effort) == int:

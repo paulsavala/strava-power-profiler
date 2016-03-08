@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Strava Power Profiler</title>
+    <title>Segment Profiler</title>
     <link rel=stylesheet type=text/css href='{{ url_for('static',filename='style.css')}}'>
     <!-- jQuery stuff -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js">></script>
@@ -101,19 +101,19 @@
   <body>
   	<div id="nav_bar">
   		<div id="user_pic"><img src="{{ url_for('static',filename='user_pic.jpg')}}" id="user_pic" alt="Pic"></img></div>
-  		<div id="iowava">Power Profile</div>
+  		<div id="iowava">Segment Profiler</div>
   		<div id="username">{{ athlete.username }}</div>
   	</div>
   	<div id="graph">
   		<div id="segment_stats">
-  			<div>Segment name: <span id="segment_stats_name"></span></div>
-  			<div>Distance: <span id="segment_stats_distance"></span></div>
-  			<div>Hill score: <span id="segment_stats_hill_score"></span></div>
-  			<div>Var score: <span id="segment_stats_var_score"></span></div>
-  			<div>Climb score: <span id="segment_stats_climb_score"></span></div>
-  			<div>Puncheur score: <span id="segment_stats_puncheur_score"></span></div>
-  			<div>Sprint score: <span id="segment_stats_sprint_score"></span></div>
-  			<div>TT score: <span id="segment_stats_tt_score"></span></div>
+  			<div>Segment name: <span id="segment_stats_name" class="segment_stats"></span></div>
+  			<div>Distance: <span id="segment_stats_distance" class="segment_stats"></span></div>
+  			<div>Hill score: <span id="segment_stats_hill_score" class="segment_stats"></span></div>
+  			<div>Var score: <span id="segment_stats_var_score" class="segment_stats"></span></div>
+  			<div>Climb score: <span id="segment_stats_climb_score" class="segment_stats"></span></div>
+  			<div>Puncheur score: <span id="segment_stats_puncheur_score" class="segment_stats"></span></div>
+  			<div>Sprint score: <span id="segment_stats_sprint_score" class="segment_stats"></span></div>
+  			<div>TT score: <span id="segment_stats_tt_score" class="segment_stats"></span></div>
   		</div>
   		<div id="radar_chart"></div>
   	</div>
@@ -144,14 +144,7 @@
   				{% for effort in activity_segments[activity.id] %}
   				<tr id="segment_{{ effort.id }}">
   					<td class="table_label">{{ effort.name }}</td>
-  					<td class="table_label">{{ effort.hill_score }}</td>
-  					<td class="table_label">{{ effort.var_score }}</td>
-  				</tr>
-  				<tr>
-  					<td class="table_label">{{ effort.climb_val }}</td>
-  					<td class="table_label">{{ effort.puncheur_val }}</td>
-  					<td class="table_label">{{ effort.sprint_val }}</td>
-  					<td class="table_label">{{ effort.tt_val }}</td>
+					<td class="table_data">{{ effort.distance }}</td>
   				</tr>
   				{% endfor %}
   			</table>
@@ -159,7 +152,7 @@
   		</div>
   	</div>
   	<div id="footer">
-  		{{ debug }}<span id="testing"></span>
+  		Segment Profiler: by Paul Savala {{ debug }}<span id="testing"></span>
   	</div>
   </body>
 </html>
